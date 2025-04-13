@@ -100,43 +100,66 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (isInitialLoad) return;
-
-    if (remainingTime === 0) {
+    const handleGameEnd = () => {
       setIsPlaying(false);
       setShowGameEnd(true);
-    } else {
+    };
+
+    const saveGameState = () => {
       localStorage.setItem(
         "currentGame",
         JSON.stringify({
           username: name,
           timeLeft: remainingTime,
           initialTime: time,
-          points: points,
+          points,
           fish: JSON.stringify(fish),
           isPlaying,
         })
       );
+    };
+
+    const updatePlayerRecords = () => {
+      if (!players) {
+        setPlayers([{ name, points }]);
+        return;
+      }
+
+      const existingPlayer = players.find((player) => player.name === name);
+
+      if (!existingPlayer) {
+        setPlayers([...players, { name, points }]);
+        return;
+      }
+
+      if (points > existingPlayer.points) {
+        setPlayers(
+          players.map((player) =>
+            player.name === name ? { ...player, points } : player
+          )
+        );
+      }
+    };
+
+    if (isInitialLoad) return;
+
+    if (remainingTime === 0) {
+      handleGameEnd();
+    } else {
+      saveGameState();
     }
 
-    if (players) {
-      if (players.length === 0) {
-        setPlayers([{ name, points }]);
-      } else {
-        const playerExists = players.find((player) => player.name === name);
-        if (playerExists) {
-          const updatedPlayers = players.map((player) =>
-            player.name === name ? { ...player, points } : player
-          );
-          if (points > playerExists.points) setPlayers(updatedPlayers);
-        } else {
-          setPlayers([...players, { name, points }]);
-        }
-      }
-    } else {
-      setPlayers([{ name, points }]);
-    }
-  }, [remainingTime]);
+    updatePlayerRecords();
+  }, [
+    remainingTime,
+    isInitialLoad,
+    name,
+    points,
+    fish,
+    isPlaying,
+    players,
+    time,
+  ]);
 
   useEffect(() => {
     if (isPlaying && remainingTime > 0) {
